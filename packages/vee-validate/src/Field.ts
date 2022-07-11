@@ -111,7 +111,6 @@ const FieldImpl = defineComponent({
     const name = toRef(props, 'name');
     const label = toRef(props, 'label');
     const uncheckedValue = toRef(props, 'uncheckedValue');
-    const keepValue = toRef(props, 'keepValue');
 
     const {
       errors,
@@ -137,7 +136,7 @@ const FieldImpl = defineComponent({
       uncheckedValue,
       label,
       validateOnValueUpdate: false,
-      keepValueOnUnmount: keepValue,
+      keepValueOnUnmount: props.keepValue,
     });
 
     // If there is a v-model applied on the component we need to emit the `update:modelValue` whenever the value binding changes

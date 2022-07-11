@@ -72,7 +72,6 @@ const FormImpl = defineComponent({
   setup(props, ctx) {
     const initialValues = toRef(props, 'initialValues');
     const validationSchema = toRef(props, 'validationSchema');
-    const keepValues = toRef(props, 'keepValues');
 
     const {
       errors,
@@ -98,7 +97,7 @@ const FormImpl = defineComponent({
       initialErrors: props.initialErrors,
       initialTouched: props.initialTouched,
       validateOnMount: props.validateOnMount,
-      keepValuesOnUnmount: keepValues,
+      keepValuesOnUnmount: props.keepValues,
     });
 
     const onSubmit = props.onSubmit ? handleSubmit(props.onSubmit, props.onInvalidSubmit) : submitForm;

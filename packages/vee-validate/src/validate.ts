@@ -25,6 +25,7 @@ interface ValidationOptions {
   name?: string;
   values?: Record<string, unknown>;
   bails?: boolean;
+  virtualRender?: boolean;
 }
 
 /**

@@ -25,6 +25,7 @@ import {
   PrivateFieldContext,
   SchemaValidationMode,
   ValidationOptions,
+  FieldMeta,
 } from './types';
 import {
   normalizeRules,
@@ -36,6 +37,7 @@ import {
   resolveNextCheckboxValue,
   isYupValidator,
   applyModelModifiers,
+  isPropPresent,
 } from './utils';
 import { isCallable } from '../../shared';
 import { FieldContextKey, FormContextKey, IS_ABSENT } from './symbols';
@@ -53,7 +55,7 @@ interface FieldOptions<TValue = unknown> {
   uncheckedValue?: MaybeRef<TValue>;
   label?: MaybeRef<string | undefined>;
   standalone?: boolean;
-  keepValueOnUnmount?: MaybeRef<boolean | undefined>;
+  keepValueOnUnmount?: boolean;
   modelPropName?: string;
   syncVModel?: boolean;
 }
@@ -454,7 +456,7 @@ function useCheckboxField<TValue = unknown>(
     }
 
     onBeforeUnmount(() => {
-      const shouldKeepValue = unref(field.keepValueOnUnmount) ?? unref(form?.keepValuesOnUnmount) ?? false;
+      const shouldKeepValue = field.keepValueOnUnmount ?? form?.keepValuesOnUnmount ?? false;
       // toggles the checkbox value if it was checked and the unset behavior is set
       if (checked.value && !shouldKeepValue) {
         handleCheckboxChange(unref(checkedValue), false);

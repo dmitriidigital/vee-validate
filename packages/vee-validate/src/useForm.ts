@@ -60,7 +60,9 @@ interface FormOptions<TValues extends Record<string, any>> {
   initialErrors?: Record<keyof TValues, string | undefined>;
   initialTouched?: Record<keyof TValues, boolean>;
   validateOnMount?: boolean;
-  keepValuesOnUnmount?: MaybeRef<boolean>;
+  keepValuesOnUnmount?: boolean;
+  virtualRender?: boolean;
+  ignoreVirtualRender?: boolean;
 }
 
 let FORM_COUNTER = 0;
@@ -145,6 +147,9 @@ export function useForm<TValues extends Record<string, any> = Record<string, any
 
   const keepValuesOnUnmount = opts?.keepValuesOnUnmount ?? false;
 
+  const virtualRender = opts?.virtualRender ?? false;
+  const ignoreVirtualRender = opts?.ignoreVirtualRender ?? false;
+
   // initial form values
   const { initialValues, originalInitialValues, setInitialValues } = useFormInitialValues<TValues>(
     fieldsByPath,
@@ -168,6 +173,7 @@ export function useForm<TValues extends Record<string, any> = Record<string, any
     isSubmitting,
     fieldArrays,
     keepValuesOnUnmount,
+    virtualRender,
     validateSchema: unref(schema) ? validateSchema : undefined,
     validate,
     register: registerField,
@@ -412,6 +418,7 @@ export function useForm<TValues extends Record<string, any> = Record<string, any
   }
 
   function registerField(field: PrivateFieldContext) {
+    const virtualRender = opts?.virtualRender ?? false;
     const fieldPath = unref(field.name);
     insertFieldAtPath(field, fieldPath);
 
@@ -427,14 +434,15 @@ export function useForm<TValues extends Record<string, any> = Record<string, any
         // re-validate if either path had errors before
         if (errors.value[oldPath] || errors.value[newPath]) {
           // clear up both paths errors
-          setFieldError(oldPath, undefined);
-          validateField(newPath);
+          if (!virtualRender) {
+            setFieldError(oldPath, undefined);
+            validateField(newPath);
+          }
         }
-
         // clean up the old path if no other field is sharing that name
         // #3325
         await nextTick();
-        if (!fieldExists(oldPath)) {
+        if (!fieldExists(oldPath) && !virtualRender) {
           unsetPath(formValues, oldPath);
         }
       });
@@ -468,7 +476,7 @@ export function useForm<TValues extends Record<string, any> = Record<string, any
         // Checks if the field was configured to be unset during unmount or not
         // Checks both the form-level config and field-level one
         // Field has the priority if it is set, otherwise it goes to the form settings
-        const shouldKeepValue = unref(field.keepValueOnUnmount) ?? unref(keepValuesOnUnmount);
+        const shouldKeepValue = field.keepValueOnUnmount ?? keepValuesOnUnmount;
         if (shouldKeepValue) {
           return;
         }
@@ -485,7 +493,8 @@ export function useForm<TValues extends Record<string, any> = Record<string, any
   async function validate(opts?: Partial<ValidationOptions>): Promise<FormValidationResult<TValues>> {
     mutateAllFields(f => (f.meta.validated = true));
     if (formCtx.validateSchema) {
-      return formCtx.validateSchema(opts?.mode || 'force');
+      // return formCtx.validateSchema(opts?.mode || 'force');
+      return formCtx.validateSchema(<'validated-only' | 'silent' | 'force'>opts?.mode, opts || {});
     }
 
     // No schema, each field is responsible to validate itself
@@ -644,7 +653,10 @@ export function useForm<TValues extends Record<string, any> = Record<string, any
   const debouncedSilentValidation = debounceAsync(_validateSchema, 5);
   const debouncedValidation = debounceAsync(_validateSchema, 5);
 
-  async function validateSchema(mode: SchemaValidationMode): Promise<FormValidationResult<TValues>> {
+  async function validateSchema(
+    mode: SchemaValidationMode,
+    validateOptions?: FormOptions<TValues>
+  ): Promise<FormValidationResult<TValues>> {
     const formResult = await (mode === 'silent' ? debouncedSilentValidation() : debouncedValidation());
 
     // fields by id lookup
@@ -673,7 +685,9 @@ export function useForm<TValues extends Record<string, any> = Record<string, any
 
         // field not rendered
         if (!field) {
-          setFieldError(path, messages);
+          if (!opts?.virtualRender || validateOptions?.ignoreVirtualRender) {
+            setFieldError(path, messages);
+          }
 
           return validation;
         }
@@ -689,7 +703,9 @@ export function useForm<TValues extends Record<string, any> = Record<string, any
           return validation;
         }
 
-        applyFieldMutation(field, f => f.setState({ errors: fieldResult.errors }));
+        if (!opts?.virtualRender || validateOptions?.ignoreVirtualRender) {
+          applyFieldMutation(field, f => f.setState({ errors: fieldResult.errors }));
+        }
 
         return validation;
       },

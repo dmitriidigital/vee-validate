@@ -13,7 +13,9 @@
 </p>
 
 <br>
-
+*FIX* Working correctly with [vue-virtual-scroller](https://github.com/Akryum/vue-virtual-scroller)
+<br>
+<br>
 vee-validate is a form validation library for [Vue.js](https://vuejs.org/) that allows you to validate inputs and build better form UIs in a familiar declarative style or using composition functions.
 
 ## Sponsors

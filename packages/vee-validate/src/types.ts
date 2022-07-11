@@ -56,6 +56,7 @@ export type SchemaValidationMode = 'validated-only' | 'silent' | 'force';
 
 export interface ValidationOptions {
   mode: SchemaValidationMode;
+  virtualRender: boolean;
 }
 
 export interface FieldEntry<TValue = unknown> {
@@ -92,13 +93,13 @@ export interface PrivateFieldContext<TValue = unknown> {
   label?: MaybeRef<string | undefined>;
   type?: string;
   bails?: boolean;
-  keepValueOnUnmount?: MaybeRef<boolean | undefined>;
+  keepValueOnUnmount?: boolean;
   checkedValue?: MaybeRef<TValue>;
   uncheckedValue?: MaybeRef<TValue>;
   checked?: Ref<boolean>;
   resetField(state?: Partial<FieldState<TValue>>): void;
   handleReset(): void;
-  validate(opts?: Partial<ValidationOptions>): Promise<ValidationResult>;
+  validate(opts?: Partial<ValidationOptions>, validateOptions?: never): Promise<ValidationResult>;
   handleChange(e: Event | unknown, shouldValidate?: boolean): void;
   handleBlur(e?: Event): void;
   setState(state: Partial<FieldState<TValue>>): void;
@@ -189,8 +190,12 @@ export interface PrivateFormContext<TValues extends Record<string, any> = Record
   errors: ComputedRef<FormErrors<TValues>>;
   meta: ComputedRef<FormMeta<TValues>>;
   isSubmitting: Ref<boolean>;
-  keepValuesOnUnmount: MaybeRef<boolean>;
-  validateSchema?: (mode: SchemaValidationMode) => Promise<FormValidationResult<TValues>>;
+  keepValuesOnUnmount: boolean;
+  virtualRender: boolean;
+  validateSchema?: (
+    mode: SchemaValidationMode,
+    validateOptions?: Partial<ValidationOptions>
+  ) => Promise<FormValidationResult<TValues>>;
   validate(opts?: Partial<ValidationOptions>): Promise<FormValidationResult<TValues>>;
   validateField(field: keyof TValues): Promise<ValidationResult>;
   setFieldErrorBag(field: string, messages: string | string[]): void;
@@ -223,6 +228,8 @@ export interface FormContext<TValues extends Record<string, any> = Record<string
     | 'unsetInitialValue'
     | 'fieldArrays'
     | 'keepValuesOnUnmount'
+    | 'virtualRender'
+    | 'ignoreVirtualRender'
   > {
   handleReset: () => void;
   submitForm: (e?: unknown) => Promise<void>;
